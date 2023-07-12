@@ -1,88 +1,64 @@
-import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { addContact } from '../redux/operations';
-import { selectContacts } from '../redux/selectors';
-import css from './ContactForm.module.css';
+import { useAddContactMutation } from 'services/phonebookApi';
+import { toast } from 'react-toastify';
 
-function ContactForm() {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+import { Inputbox, Input, Span, Btn } from './ContactForm.styled';
 
-  const contacts = useSelector(selectContacts);
-  const dispatch = useDispatch();
-
-  const handleChange = event => {
-    const { name, value } = event.currentTarget;
-
-    switch (name) {
-      case 'name':
-        setName(value);
-        break;
-
-      case 'phone':
-        setPhone(value);
-        break;
-
-      default:
-        return;
-    }
-  };
+function ContactForm({ contacts }) {
+  const [addContact] = useAddContactMutation();
 
   const handleSubmit = event => {
+    const form = event.target;
+    const name = form.name.value;
+    const number = form.number.value;
+
     event.preventDefault();
-    const contact = {
-      name,
-      phone,
-    };
 
-    const checkContact = contacts.some(
-      contact => contact.name.toLowerCase() === name.toLowerCase()
-    );
+    for (const contact of contacts) {
+      if (contact.name === name)
+        return toast.warn(
+          `${name} is already in your contacts with the phone number ${contact.number}`
+        );
 
-    checkContact
-      ? alert(`${name} is already in contacts.`)
-      : dispatch(addContact(contact));
-
-    reset();
-  };
-
-  const reset = () => {
-    setName('');
-    setPhone('');
+      if (contact.number === number)
+        return toast.warn(
+          `${number} is already in your contacts with the name ${contact.name}`
+        );
+    }
+    addContact({ name, number });
+    form.reset();
   };
 
   return (
-    <form className={css.form} onSubmit={handleSubmit}>
-      <label>
-        Name
-        <input
-          className={css.inputName}
-          value={name}
-          onChange={handleChange}
-          type="text"
-          name="name"
-          pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
-          title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
-          required
-        />
-      </label>
-      <label>
-        Number
-        <input
-          className={css.inputNumber}
-          value={phone}
-          onChange={handleChange}
-          type="tel"
-          name="phone"
-          pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
-          title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
-          required
-        />
-      </label>
-
-      <button type="submit" className={css.btnEditor}>
-        Add contact
-      </button>
+    <form onSubmit={handleSubmit}>
+      <Inputbox>
+        <label>
+          <Input
+            type="text"
+            name="name"
+            pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
+            title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
+            required
+            placeholder=" "
+          />
+          <Span>Name</Span>
+        </label>
+      </Inputbox>
+      <Inputbox>
+        <label>
+          <Input
+            type="tel"
+            name="number"
+            pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
+            title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
+            required
+            placeholder=" "
+          />
+          <Span>Number</Span>
+        </label>
+      </Inputbox>
+      <Inputbox>
+        <Btn type="submit">Add contact</Btn>
+      </Inputbox>
     </form>
   );
 }
